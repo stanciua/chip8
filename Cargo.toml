@@ -1,0 +1,13 @@
+[package]
+name = "chip8"
+version = "0.1.0"
+authors = ["Andrei Stanciu <andreistanciu.as@gmail.com>"]
+
+[dependencies.sdl2]
+version = "0.31"
+default-features = false
+features = ["gfx","mixer"]
+
+[dependencies]
+byteorder = "*"
+rand = "*"
