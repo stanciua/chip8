@@ -4,6 +4,42 @@ pub mod interpreter {
     use rand::thread_rng;
     use rand::Rng;
     use screen::screen::Screen;
+    use std::time::Duration;
+
+    pub const FONTS: [[u8; 5]; 16] = [
+        // zero
+        [0xF0, 0x90, 0x90, 0x90, 0xF0],
+        // one
+        [0x20, 0x60, 0x20, 0x20, 0x70],
+        // two
+        [0xF0, 0x10, 0xF0, 0x80, 0xF0],
+        // three
+        [0xF0, 0x10, 0xF0, 0x10, 0xF0],
+        // four
+        [0x90, 0x90, 0xF0, 0x10, 0x10],
+        // five
+        [0xF0, 0x80, 0xF0, 0x10, 0xF0],
+        // six
+        [0xF0, 0x80, 0xF0, 0x90, 0xF0],
+        // seven
+        [0xF0, 0x10, 0x20, 0x40, 0x40],
+        // eight
+        [0xF0, 0x90, 0xF0, 0x90, 0xF0],
+        // nine
+        [0xF0, 0x90, 0xF0, 0x10, 0xF0],
+        // A
+        [0xF0, 0x90, 0xF0, 0x90, 0x90],
+        // B
+        [0xE0, 0x90, 0xE0, 0x90, 0xE0],
+        // C
+        [0xF0, 0x80, 0x80, 0x80, 0xF0],
+        // D
+        [0xE0, 0x90, 0x90, 0x90, 0xE0],
+        // E
+        [0xF0, 0x80, 0xF0, 0x80, 0xF0],
+        // F
+        [0xF0, 0x80, 0xF0, 0x80, 0x80],
+    ];
 
     #[derive(Debug)]
     pub struct Interpreter<'a, 'b> {
@@ -26,6 +62,8 @@ pub mod interpreter {
             program: &'a mut [u8],
             screen: &'a mut Screen<'a>,
         ) -> Interpreter<'a, 'b> {
+            let mut raw_memory = vec![0u8; 4096];
+            Interpreter::init_fonts(&mut raw_memory);
             Interpreter {
                 vx: [0u8; 16],
                 stack: [0u16; 16],
@@ -34,10 +72,18 @@ pub mod interpreter {
                 dt: 0,
                 sp: 0,
                 st: 0,
-                memory: vec![0u8; 4096],
+                memory: raw_memory,
                 program: program,
                 screen: screen,
                 keyboard: keyboard,
+            }
+        }
+
+        pub fn init_fonts(memory: &mut [u8]) {
+            // place the fonts sprite in memory starting with reserved address
+            // 0x0000
+            for (idx, b) in FONTS.iter().flat_map(|arr| arr.iter()).enumerate() {
+                memory[idx] = *b;
             }
         }
 
@@ -72,6 +118,10 @@ pub mod interpreter {
                         self.pc = self.stack[self.sp];
                         self.sp -= 1;
                     }
+                    (0, 0, _, _l) => {
+                        // NOP
+                    }
+
                     (1, _, _, _) => {
                         self.pc = instr & 0xFFF;
                     }
@@ -99,7 +149,8 @@ pub mod interpreter {
                         self.vx[r as usize] = (instr & 0xFF) as u8;
                     }
                     (7, r, _, _) => {
-                        self.vx[r as usize] += (instr & 0xFF) as u8;
+                        self.vx[r as usize] =
+                            ((self.vx[r as usize] as u16 + (instr & 0xFF)) & 0xFF) as u8;
                     }
                     (8, r1, r2, 0) => {
                         self.vx[r1 as usize] = self.vx[r2 as usize];
@@ -198,7 +249,48 @@ pub mod interpreter {
                             self.pc += 2;
                         }
                     }
-
+                    (0xF, r, 0, 7) => {
+                        self.vx[r as usize] = self.dt;
+                    }
+                    (0xF, r, 0, 0xA) => loop {
+                        if let Some(idx) = self.keyboard.keys().iter().position(|k| *k == 1) {
+                            self.vx[r as usize] = idx as u8;
+                            break;
+                        }
+                        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+                    },
+                    (0xF, r, 1, 5) => {
+                        self.dt = self.vx[r as usize];
+                    }
+                    (0xF, r, 1, 8) => {
+                        self.st = self.vx[r as usize];
+                    }
+                    (0xF, r, 1, 0xE) => {
+                        self.i += self.vx[r as usize] as u16;
+                    }
+                    (0xF, r, 2, 9) => {
+                        // font sprites are located starting with address 0x0000, each
+                        // sprite is 5 bytes long
+                        self.i = self.vx[r as usize] as u16 * 5;
+                    }
+                    (0xF, r, 3, 3) => {
+                        let mut value = self.vx[r as usize];
+                        self.memory[self.i as usize] = value / 100;
+                        value %= 100;
+                        self.memory[(self.i + 1) as usize] = value / 10;
+                        value %= 10;
+                        self.memory[(self.i + 2) as usize] = value;
+                    }
+                    (0xF, r, 5, 5) => {
+                        for idx in 0..=r {
+                            self.memory[(self.i + idx as u16) as usize] = self.vx[idx as usize];
+                        }
+                    }
+                    (0xF, r, 6, 5) => {
+                        for idx in 0..=r {
+                            self.vx[idx as usize] = self.memory[(self.i + idx as u16) as usize];
+                        }
+                    }
                     _ => panic!(format!("unsupported instruction: {:04X}", instr)),
                 }
             }
