@@ -1,170 +1,59 @@
-pub mod keyboard {
+use sdl2;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
-    use sdl2::event::Event;
-    use sdl2::keyboard::Keycode;
-    use sdl2::pixels::Color;
-    use std::collections::HashSet;
-    use std::fmt;
-    use std::time::Duration;
+pub struct Keyboard {
+    events: sdl2::EventPump,
+}
 
-    pub struct Keyboard<'b> {
-        keys: [u8; 16],
-        sdl_context: &'b ::sdl2::Sdl,
-    }
-
-    impl<'b> fmt::Debug for Keyboard<'b> {
-        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "keys: {:?}", self.keys)
+impl Keyboard {
+    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
+        Keyboard {
+            events: sdl_context.event_pump().unwrap(),
         }
     }
 
-    impl<'b> Keyboard<'b> {
-        pub fn with_context(context: &'b ::sdl2::Sdl) -> Keyboard {
-            Keyboard {
-                keys: [0u8; 16],
-                sdl_context: context,
+    pub fn poll(&mut self) -> Result<[bool; 16], ()> {
+        for event in self.events.poll_iter() {
+            if let Event::Quit { .. } = event {
+                return Err(());
             }
         }
 
-        pub fn keys(&mut self) -> &[u8] {
-            let mut event_pump = self.sdl_context.event_pump().unwrap();
+        let keys: Vec<Keycode> = self
+            .events
+            .keyboard_state()
+            .pressed_scancodes()
+            .filter_map(Keycode::from_scancode)
+            .collect();
 
-            for event in event_pump.poll_iter() {
-                match event {
-                    // handle KeyDown events
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num0),
-                        ..
-                    } => self.keys[0] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num1),
-                        ..
-                    } => self.keys[1] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num2),
-                        ..
-                    } => self.keys[2] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num3),
-                        ..
-                    } => self.keys[3] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num4),
-                        ..
-                    } => self.keys[4] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num5),
-                        ..
-                    } => self.keys[5] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num6),
-                        ..
-                    } => self.keys[6] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num7),
-                        ..
-                    } => self.keys[7] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num8),
-                        ..
-                    } => self.keys[8] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::Num9),
-                        ..
-                    } => self.keys[9] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::A),
-                        ..
-                    } => self.keys[0xA] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::B),
-                        ..
-                    } => self.keys[0xB] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::C),
-                        ..
-                    } => self.keys[0xC] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::D),
-                        ..
-                    } => self.keys[0xD] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::E),
-                        ..
-                    } => self.keys[0xE] = 1,
-                    Event::KeyDown {
-                        keycode: Some(Keycode::F),
-                        ..
-                    } => self.keys[0xF] = 1,
-                    // handle KeyUp events
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num0),
-                        ..
-                    } => self.keys[0] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num1),
-                        ..
-                    } => self.keys[1] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num2),
-                        ..
-                    } => self.keys[2] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num3),
-                        ..
-                    } => self.keys[3] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num4),
-                        ..
-                    } => self.keys[4] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num5),
-                        ..
-                    } => self.keys[5] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num6),
-                        ..
-                    } => self.keys[6] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num7),
-                        ..
-                    } => self.keys[7] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num8),
-                        ..
-                    } => self.keys[8] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::Num9),
-                        ..
-                    } => self.keys[9] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::A),
-                        ..
-                    } => self.keys[0xA] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::B),
-                        ..
-                    } => self.keys[0xB] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::C),
-                        ..
-                    } => self.keys[0xC] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::D),
-                        ..
-                    } => self.keys[0xD] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::E),
-                        ..
-                    } => self.keys[0xE] = 0,
-                    Event::KeyUp {
-                        keycode: Some(Keycode::F),
-                        ..
-                    } => self.keys[0xF] = 0,
-                    _ => {}
-                }
+        let mut chip8_keys = [false; 16];
+
+        for key in keys {
+            let index = match key {
+                Keycode::Num1 => Some(0x1),
+                Keycode::Num2 => Some(0x2),
+                Keycode::Num3 => Some(0x3),
+                Keycode::Num4 => Some(0xc),
+                Keycode::Q => Some(0x4),
+                Keycode::W => Some(0x5),
+                Keycode::E => Some(0x6),
+                Keycode::R => Some(0xd),
+                Keycode::A => Some(0x7),
+                Keycode::S => Some(0x8),
+                Keycode::D => Some(0x9),
+                Keycode::F => Some(0xe),
+                Keycode::Z => Some(0xa),
+                Keycode::X => Some(0x0),
+                Keycode::C => Some(0xb),
+                Keycode::V => Some(0xf),
+                _ => None,
+            };
+
+            if let Some(i) = index {
+                chip8_keys[i] = true;
             }
-            &self.keys
         }
+        Ok(chip8_keys)
     }
 }
