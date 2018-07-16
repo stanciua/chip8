@@ -26,8 +26,8 @@ const CHIP8_RAM: usize = 4096;
 
 pub fn main() -> std::io::Result<()> {
     let sleep_duration = Duration::from_millis(2);
-    let size = metadata("TETRIS")?.len();
-    let mut file = File::open("TETRIS")?;
+    let size = metadata("brix.ch8")?.len();
+    let mut file = File::open("brix.ch8")?;
     let mut program = Vec::with_capacity(size as usize);
     let _bytes_read = file.read_to_end(&mut program)?;
     {

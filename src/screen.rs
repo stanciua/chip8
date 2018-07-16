@@ -19,7 +19,7 @@ impl Screen {
     pub fn new(sdl_context: &Sdl) -> Self {
         let video_sys = sdl_context.video().unwrap();
         let window = video_sys
-            .window("CHIP-8", 1920, 1080)
+            .window("CHIP-8", SCREEN_WIDTH, SCREEN_HEIGHT)
             .position_centered()
             .opengl()
             .build()
