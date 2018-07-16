@@ -1,4 +1,5 @@
 use byteorder::{BigEndian, ByteOrder};
+use disassembler::Instruction;
 use rand::thread_rng;
 use rand::Rng;
 use CHIP8_HEIGHT;
@@ -148,7 +149,8 @@ impl Interpreter {
             ((instr >> 4) & 0xF) as u8,
             (instr & 0xF) as u8,
         );
-        println!("instr: {:X?}", nimbles);
+        print!("PC: {:X}, ", self.pc);
+        println!("instr: {}", Instruction(instr));
         match nimbles {
             (0, 0, 0xE, 0) => {
                 self.vram
@@ -287,21 +289,16 @@ impl Interpreter {
 
                 self.vx[0xF] = 0;
                 for i in 0..sprites.len() {
-                    let x = (self.vx[r1 as usize] + i as u8) % CHIP8_HEIGHT as u8;
+                    let y = (self.vx[r2 as usize] + i as u8) % CHIP8_HEIGHT as u8;
                     for j in 0..sprites[i].len() {
-                        let y = (self.vx[r2 as usize] + j as u8) % CHIP8_WIDTH as u8;
-                        if self.vram[x as usize][y as usize] == 1 && sprites[i][j] == 1 {
+                        let x = (self.vx[r1 as usize] + j as u8) % CHIP8_WIDTH as u8;
+                        if self.vram[y as usize][x as usize] == 1 && sprites[i][j] == 1 {
                             self.vx[0xF] = 1;
                         } else {
                             self.vx[0xF] = 0;
                         }
-                        self.vram[x as usize][y as usize] ^= sprites[i][j];
+                        self.vram[y as usize][x as usize] ^= sprites[i][j];
                     }
-                    // 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
-                    // 1 2 3 4
-                    // 5 6 7 8
-                    // 9 10 11 12
-                    // 13 14 15 16
                 }
                 self.vram_changed = true;
                 self.pc += INSTR_SIZE;

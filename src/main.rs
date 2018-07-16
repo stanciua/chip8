@@ -16,7 +16,6 @@ pub mod keyboard;
 pub mod screen;
 
 use audio::Audio;
-use disassembler::Disassembler;
 use interpreter::Interpreter;
 use keyboard::Keyboard;
 use screen::Screen;

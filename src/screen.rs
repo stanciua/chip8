@@ -19,7 +19,7 @@ impl Screen {
     pub fn new(sdl_context: &Sdl) -> Self {
         let video_sys = sdl_context.video().unwrap();
         let window = video_sys
-            .window("CHIP-8", SCREEN_WIDTH, SCREEN_HEIGHT)
+            .window("CHIP-8", 1920, 1080)
             .position_centered()
             .opengl()
             .build()
@@ -37,8 +37,8 @@ impl Screen {
     pub fn draw(&mut self, pixels: &[[u8; CHIP8_WIDTH]; CHIP8_HEIGHT]) {
         for (i, row) in pixels.iter().enumerate() {
             for (j, p) in row.iter().enumerate() {
-                let x = (i as u32) * SCALE;
-                let y = (j as u32) * SCALE;
+                let x = (j as u32) * SCALE;
+                let y = (i as u32) * SCALE;
 
                 self.canvas.set_draw_color(if *p == 0 {
                     pixels::Color::RGB(0, 0, 0)
