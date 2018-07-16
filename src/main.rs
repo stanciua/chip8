@@ -32,8 +32,8 @@ pub fn main() -> std::io::Result<()> {
     let mut program = Vec::with_capacity(size as usize);
     let _bytes_read = file.read_to_end(&mut program)?;
     {
-        let _disassembly = Disassembler::from_binary(&program);
-        println!("{}", _disassembly);
+        // let _disassembly = Disassembler::from_binary(&program);
+        // println!("{}", _disassembly);
     }
     let sdl_context = sdl2::init().unwrap();
     let mut keyboard = Keyboard::new(&sdl_context);

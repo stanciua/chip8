@@ -1,67 +1,41 @@
 use std::fmt;
 
 use byteorder::{BigEndian, ByteOrder};
-pub struct Disassembler<'a> {
-    program: &'a [u8],
-}
-impl<'a> Disassembler<'a> {
-    pub fn from_binary(program: &'a [u8]) -> Disassembler {
-        Disassembler { program: program }
-    }
-}
 
-impl<'a> fmt::Display for Disassembler<'a> {
+pub struct Instruction(u16);
+
+impl fmt::Display for Instruction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let instructions = self
-            .program
-            .chunks(2)
-            .map(|bytes| BigEndian::read_u16(bytes))
-            .collect::<Vec<_>>();
-        let _res = writeln!(f, "{:4}    {:4}          {}", "PC", "Op", "Mnemonic");
-        let mut pc = 0;
         for instr in instructions {
             let nimble = instr >> 12;
             match nimble {
                 // Clear screen and return from subroutine instructions
                 0 => match instr {
                     0x00E0 => {
-                        let _res = writeln!(f, "{:04X}    {:04X}          {}", pc, instr, "CLS");
+                        let _res = writeln!(f, "{:04X}          {}", instr, "CLS");
                     }
                     0x00EE => {
-                        let _res = writeln!(f, "{:04X}    {:04X}          {}", pc, instr, "RTS");
+                        let _res = writeln!(f, "{:04X}          {}", instr, "RTS");
                     }
                     _ => {
-                        let _res = writeln!(f, "{:04X}    {:04X}          {}", pc, instr, "NOP");
+                        let _res = writeln!(f, "{:04X}          {}", instr, "NOP");
                     }
                 },
                 // absolute jumps to address
                 1 => {
-                    let _res = writeln!(
-                        f,
-                        "{:04X}    {:04X}          {} ${:X}",
-                        pc,
-                        instr,
-                        "JUMP",
-                        instr & 0x0FFF
-                    );
+                    let _res =
+                        writeln!(f, "{:04X}          {} ${:X}", instr, "JUMP", instr & 0x0FFF);
                 }
                 // call subroutine at address
                 2 => {
-                    let _res = writeln!(
-                        f,
-                        "{:04X}    {:04X}          {} ${:X}",
-                        pc,
-                        instr,
-                        "CALL",
-                        instr & 0x0FFF
-                    );
+                    let _res =
+                        writeln!(f, "{:04X}          {} ${:X}", instr, "CALL", instr & 0x0FFF);
                 }
                 // Skip the next instruction if VX is equals to value NN
                 3 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, #${:02X}",
-                        pc,
+                        "{:04X}          {} V{:X}, #${:02X}",
                         instr,
                         "SKIP.EQ",
                         (instr & 0x0F00) >> 8,
@@ -72,8 +46,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 4 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, #${:X}",
-                        pc,
+                        "{:04X}          {} V{:X}, #${:X}",
                         instr,
                         "SKIP.NE",
                         (instr & 0x0F00) >> 8,
@@ -84,8 +57,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 5 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                        pc,
+                        "{:04X}          {} V{:X}, V{:X}",
                         instr,
                         "SKIP.EQ",
                         (instr & 0x0F00) >> 8,
@@ -96,8 +68,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 6 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, $#{:02X}",
-                        pc,
+                        "{:04X}          {} V{:X}, $#{:02X}",
                         instr,
                         "SETR",
                         (instr & 0x0F00) >> 8,
@@ -108,8 +79,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 7 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, $#{:02X}",
-                        pc,
+                        "{:04X}          {} V{:X}, $#{:02X}",
                         instr,
                         "ADDR",
                         (instr & 0x0F00) >> 8,
@@ -120,8 +90,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 9 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                        pc,
+                        "{:04X}          {} V{:X}, V{:X}",
                         instr,
                         "SKIP.NE",
                         (instr & 0x0F00) >> 8,
@@ -133,8 +102,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "MOV",
                             (instr & 0x0F00) >> 8,
@@ -145,8 +113,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     1 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "OR",
                             (instr & 0x0F00) >> 8,
@@ -157,8 +124,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     2 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "AND",
                             (instr & 0x0F00) >> 8,
@@ -169,8 +135,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     3 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "XOR",
                             (instr & 0x0F00) >> 8,
@@ -182,8 +147,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     4 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "ADD.",
                             (instr & 0x0F00) >> 8,
@@ -195,8 +159,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     5 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "SUB.",
                             (instr & 0x0F00) >> 8,
@@ -207,8 +170,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     6 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "SHR.",
                             (instr & 0x00F0) >> 4
@@ -219,8 +181,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     7 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}, V{:X}",
                             instr,
                             "SUBB.",
                             (instr & 0x0F00) >> 8,
@@ -231,8 +192,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0xE => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "SHL.",
                             (instr & 0x00F0) >> 4
@@ -247,8 +207,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 0xA => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} ${:03X}",
-                        pc,
+                        "{:04X}          {} ${:03X}",
                         instr,
                         "SETI",
                         instr & 0x0FFF,
@@ -258,8 +217,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 0xB => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} ${:03X}",
-                        pc,
+                        "{:04X}          {} ${:03X}",
                         instr,
                         "JUMP0",
                         instr & 0x0FFF,
@@ -269,8 +227,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 0xC => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, #${:02X}",
-                        pc,
+                        "{:04X}          {} V{:X}, #${:02X}",
                         instr,
                         "RAND",
                         (instr & 0x0F00) >> 8,
@@ -281,8 +238,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 0xD => {
                     let _res = writeln!(
                         f,
-                        "{:04X}    {:04X}          {} V{:X}, V{:X}, #${:X}",
-                        pc,
+                        "{:04X}          {} V{:X}, V{:X}, #${:X}",
                         instr,
                         "SPRITE",
                         (instr & 0x0F00) >> 8,
@@ -295,8 +251,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x9E => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "SKIP.KEY",
                             (instr & 0x0F00) >> 8,
@@ -306,8 +261,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0xA1 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "SKIP.NOKEY",
                             (instr & 0x0F00) >> 8,
@@ -323,8 +277,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x07 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}, DELAY",
-                            pc,
+                            "{:04X}          {} V{:X}, DELAY",
                             instr,
                             "MOV",
                             (instr & 0x0F00) >> 8,
@@ -335,8 +288,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x0A => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "WAITKEY",
                             (instr & 0x0F00) >> 8,
@@ -346,8 +298,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x15 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} DELAY, V{:X}",
-                            pc,
+                            "{:04X}          {} DELAY, V{:X}",
                             instr,
                             "MOV",
                             (instr & 0x0F00) >> 8,
@@ -357,8 +308,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x18 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} SOUND, V{:X}",
-                            pc,
+                            "{:04X}          {} SOUND, V{:X}",
                             instr,
                             "MOV",
                             (instr & 0x0F00) >> 8,
@@ -368,8 +318,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x1E => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} I, V{:X}",
-                            pc,
+                            "{:04X}          {} I, V{:X}",
                             instr,
                             "ADD",
                             (instr & 0x0F00) >> 8,
@@ -379,8 +328,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x29 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "SPRITECHAR",
                             (instr & 0x0F00) >> 8,
@@ -391,8 +339,7 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     0x33 => {
                         let _res = writeln!(
                             f,
-                            "{:04X}    {:04X}          {} V{:X}",
-                            pc,
+                            "{:04X}          {} V{:X}",
                             instr,
                             "MOVBCD",
                             (instr & 0x0F00) >> 8,
@@ -400,19 +347,11 @@ impl<'a> fmt::Display for Disassembler<'a> {
                     }
                     // stores V0 -> VX included in memory starting at adress I
                     0x55 => {
-                        let _res = writeln!(
-                            f,
-                            "{:04X}    {:04X}          {} (I), V0-VX",
-                            pc, instr, "MOVM",
-                        );
+                        let _res = writeln!(f, "{:04X}          {} (I), V0-VX", instr, "MOVM",);
                     }
                     // fills V0 -> VX with values read from memory starting with address I
                     0x65 => {
-                        let _res = writeln!(
-                            f,
-                            "{:04X}    {:04X}          {} V0-VX, (I)",
-                            pc, instr, "MOVM",
-                        );
+                        let _res = writeln!(f, "{:04X}          {} V0-VX, (I)", instr, "MOVM",);
                     }
                     _ => panic!(format!(
                         "unsupported instruction {:04X} within nimble: {:X}",
@@ -421,7 +360,6 @@ impl<'a> fmt::Display for Disassembler<'a> {
                 },
                 _ => panic!(format!("unsupported instruction with nimble: {:X}", nimble)),
             };
-            pc += 2;
         }
         Ok(())
     }

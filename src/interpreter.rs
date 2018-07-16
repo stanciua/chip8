@@ -43,7 +43,7 @@ pub const FONTS: [[u8; 5]; 16] = [
 const INSTR_SIZE: usize = 2;
 
 pub struct State<'a> {
-    pub vram: &'a [u8; CHIP8_HEIGHT * CHIP8_WIDTH],
+    pub vram: &'a [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
     pub vram_changed: bool,
     pub beep: bool,
 }
@@ -57,7 +57,7 @@ pub struct Interpreter {
     sp: usize,
     st: u8,
     memory: [u8; CHIP8_RAM],
-    vram: [u8; CHIP8_WIDTH * CHIP8_HEIGHT],
+    vram: [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
     vram_changed: bool,
     keyboard: [bool; 16],
     keyboard_waiting: bool,
@@ -77,7 +77,7 @@ impl Interpreter {
             sp: 0,
             st: 0,
             memory: raw_memory,
-            vram: [0u8; CHIP8_WIDTH * CHIP8_HEIGHT],
+            vram: [[0u8; CHIP8_WIDTH]; CHIP8_HEIGHT],
             vram_changed: false,
             keyboard: [false; 16],
             keyboard_waiting: false,
@@ -148,10 +148,13 @@ impl Interpreter {
             ((instr >> 4) & 0xF) as u8,
             (instr & 0xF) as u8,
         );
-        // println!("instr: {:X?}", nimbles);
+        println!("instr: {:X?}", nimbles);
         match nimbles {
             (0, 0, 0xE, 0) => {
-                self.vram.iter_mut().for_each(|v| *v = 0);
+                self.vram
+                    .iter_mut()
+                    .flat_map(|it| it.iter_mut())
+                    .for_each(|v| *v = 0);
                 self.pc += INSTR_SIZE;
                 self.vram_changed = true;
             }
@@ -275,7 +278,7 @@ impl Interpreter {
                 self.pc += INSTR_SIZE;
             }
             (0xD, r1, r2, n) => {
-                let sprite = (0..n)
+                let sprites = (0..n)
                     .into_iter()
                     .map(|idx| {
                         Interpreter::byte_to_bits(self.memory[(self.i + idx as u16) as usize])
@@ -283,19 +286,22 @@ impl Interpreter {
                     .collect::<Vec<_>>();
 
                 self.vx[0xF] = 0;
-                for i in 0..sprite.len() {
-                    let x = (r1 + i as u8) % CHIP8_HEIGHT as u8;
-                    for j in 0..sprite[i].len() {
-                        let y = (r2 + j as u8) % CHIP8_WIDTH as u8;
-                        let heigth = CHIP8_HEIGHT;
-                        let width = CHIP8_WIDTH;
-                        if self.vram[x as usize * heigth + y as usize * width] == 1
-                            && sprite[i][j] == 1
-                        {
-                            self.vx[0xF] = 1
+                for i in 0..sprites.len() {
+                    let x = (self.vx[r1 as usize] + i as u8) % CHIP8_HEIGHT as u8;
+                    for j in 0..sprites[i].len() {
+                        let y = (self.vx[r2 as usize] + j as u8) % CHIP8_WIDTH as u8;
+                        if self.vram[x as usize][y as usize] == 1 && sprites[i][j] == 1 {
+                            self.vx[0xF] = 1;
+                        } else {
+                            self.vx[0xF] = 0;
                         }
-                        self.vram[x as usize * heigth + y as usize * width] ^= sprite[i][j];
+                        self.vram[x as usize][y as usize] ^= sprites[i][j];
                     }
+                    // 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+                    // 1 2 3 4
+                    // 5 6 7 8
+                    // 9 10 11 12
+                    // 13 14 15 16
                 }
                 self.vram_changed = true;
                 self.pc += INSTR_SIZE;

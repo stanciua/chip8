@@ -34,18 +34,17 @@ impl Screen {
         Screen { canvas: canvas }
     }
 
-    pub fn draw(&mut self, pixels: &[u8]) {
-        for i in 0..CHIP8_HEIGHT {
-            for j in 0..CHIP8_WIDTH {
+    pub fn draw(&mut self, pixels: &[[u8; CHIP8_WIDTH]; CHIP8_HEIGHT]) {
+        for (i, row) in pixels.iter().enumerate() {
+            for (j, p) in row.iter().enumerate() {
                 let x = (i as u32) * SCALE;
                 let y = (j as u32) * SCALE;
 
-                self.canvas
-                    .set_draw_color(if pixels[i * CHIP8_HEIGHT + j] == 0 {
-                        pixels::Color::RGB(0, 0, 0)
-                    } else {
-                        pixels::Color::RGB(0, 250, 0)
-                    });
+                self.canvas.set_draw_color(if *p == 0 {
+                    pixels::Color::RGB(0, 0, 0)
+                } else {
+                    pixels::Color::RGB(0, 250, 0)
+                });
 
                 let _ = self
                     .canvas
