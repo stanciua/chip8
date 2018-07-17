@@ -31,7 +31,7 @@ impl Screen {
         canvas.clear();
         canvas.present();
 
-        Screen { canvas: canvas }
+        Screen { canvas }
     }
 
     pub fn draw(&mut self, pixels: &[[u8; CHIP8_WIDTH]; CHIP8_HEIGHT]) {
@@ -43,7 +43,7 @@ impl Screen {
                 self.canvas.set_draw_color(if *p == 0 {
                     pixels::Color::RGB(0, 0, 0)
                 } else {
-                    pixels::Color::RGB(0, 250, 0)
+                    pixels::Color::RGB(255, 255, 255)
                 });
 
                 let _ = self

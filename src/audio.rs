@@ -27,7 +27,7 @@ impl Audio {
             })
             .unwrap();
 
-        Audio { device: device }
+        Audio { device }
     }
 
     pub fn start_beep(&self) {

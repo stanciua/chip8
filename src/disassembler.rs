@@ -9,22 +9,21 @@ impl fmt::Display for Instruction {
             // Clear screen and return from subroutine instructions
             0 => match self.0 {
                 0x00E0 => {
-                    let _res = writeln!(f, "{:04X}          {}", self.0, "CLS");
+                    let _res = writeln!(f, "{:04X}          CLS", self.0);
                 }
                 0x00EE => {
-                    let _res = writeln!(f, "{:04X}          {}", self.0, "RTS");
+                    let _res = writeln!(f, "{:04X}          RTS", self.0);
                 }
                 _ => {
-                    let _res = writeln!(f, "{:04X}          {}", self.0, "NOP");
+                    let _res = writeln!(f, "{:04X}          NOP", self.0);
                 }
             },
             // absolute jumps to address
             1 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} ${:X}",
+                    "{:04X}          JUMP ${:X}",
                     self.0,
-                    "JUMP",
                     self.0 & 0x0FFF
                 );
             }
@@ -32,9 +31,8 @@ impl fmt::Display for Instruction {
             2 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} ${:X}",
+                    "{:04X}          CALL ${:X}",
                     self.0,
-                    "CALL",
                     self.0 & 0x0FFF
                 );
             }
@@ -42,9 +40,8 @@ impl fmt::Display for Instruction {
             3 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, #${:02X}",
+                    "{:04X}          SKIP.EQ V{:X}, #${:02X}",
                     self.0,
-                    "SKIP.EQ",
                     (self.0 & 0x0F00) >> 8,
                     self.0 & 0x00FF
                 );
@@ -53,9 +50,8 @@ impl fmt::Display for Instruction {
             4 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, #${:X}",
+                    "{:04X}          SKIP.NE V{:X}, #${:X}",
                     self.0,
-                    "SKIP.NE",
                     (self.0 & 0x0F00) >> 8,
                     self.0 & 0x00FF
                 );
@@ -64,9 +60,8 @@ impl fmt::Display for Instruction {
             5 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, V{:X}",
+                    "{:04X}          SKIP.EQ V{:X}, V{:X}",
                     self.0,
-                    "SKIP.EQ",
                     (self.0 & 0x0F00) >> 8,
                     (self.0 & 0x00F0) >> 4
                 );
@@ -75,9 +70,8 @@ impl fmt::Display for Instruction {
             6 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, $#{:02X}",
+                    "{:04X}          SETR V{:X}, $#{:02X}",
                     self.0,
-                    "SETR",
                     (self.0 & 0x0F00) >> 8,
                     self.0 & 0x00FF
                 );
@@ -86,9 +80,8 @@ impl fmt::Display for Instruction {
             7 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, $#{:02X}",
+                    "{:04X}          ADDR V{:X}, $#{:02X}",
                     self.0,
-                    "ADDR",
                     (self.0 & 0x0F00) >> 8,
                     self.0 & 0x00FF
                 );
@@ -97,9 +90,8 @@ impl fmt::Display for Instruction {
             9 => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, V{:X}",
+                    "{:04X}          SKIP.NE V{:X}, V{:X}",
                     self.0,
-                    "SKIP.NE",
                     (self.0 & 0x0F00) >> 8,
                     (self.0 & 0x00F0) >> 4
                 );
@@ -109,9 +101,8 @@ impl fmt::Display for Instruction {
                 0 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          MOV V{:X}, V{:X}",
                         self.0,
-                        "MOV",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -120,9 +111,8 @@ impl fmt::Display for Instruction {
                 1 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          OR V{:X}, V{:X}",
                         self.0,
-                        "OR",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -131,9 +121,8 @@ impl fmt::Display for Instruction {
                 2 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          AND V{:X}, V{:X}",
                         self.0,
-                        "AND",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -142,9 +131,8 @@ impl fmt::Display for Instruction {
                 3 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          XOR V{:X}, V{:X}",
                         self.0,
-                        "XOR",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -154,9 +142,8 @@ impl fmt::Display for Instruction {
                 4 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          ADD. V{:X}, V{:X}",
                         self.0,
-                        "ADD.",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -166,9 +153,8 @@ impl fmt::Display for Instruction {
                 5 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          SUB. V{:X}, V{:X}",
                         self.0,
-                        "SUB.",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -177,9 +163,8 @@ impl fmt::Display for Instruction {
                 6 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          SHR. V{:X}",
                         self.0,
-                        "SHR.",
                         (self.0 & 0x00F0) >> 4
                     );
                 }
@@ -188,9 +173,8 @@ impl fmt::Display for Instruction {
                 7 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, V{:X}",
+                        "{:04X}          SUBB. V{:X}, V{:X}",
                         self.0,
-                        "SUBB.",
                         (self.0 & 0x0F00) >> 8,
                         (self.0 & 0x00F0) >> 4
                     );
@@ -199,9 +183,8 @@ impl fmt::Display for Instruction {
                 0xE => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          SHL. V{:X}",
                         self.0,
-                        "SHL.",
                         (self.0 & 0x00F0) >> 4
                     );
                 }
@@ -214,9 +197,8 @@ impl fmt::Display for Instruction {
             0xA => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} ${:03X}",
+                    "{:04X}          SETI ${:03X}",
                     self.0,
-                    "SETI",
                     self.0 & 0x0FFF,
                 );
             }
@@ -224,9 +206,8 @@ impl fmt::Display for Instruction {
             0xB => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} ${:03X}",
+                    "{:04X}          JUMP0 ${:03X}",
                     self.0,
-                    "JUMP0",
                     self.0 & 0x0FFF,
                 );
             }
@@ -234,9 +215,9 @@ impl fmt::Display for Instruction {
             0xC => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, #${:02X}",
+                    "{:04X}          
+                    RAND V{:X}, #${:02X}",
                     self.0,
-                    "RAND",
                     (self.0 & 0x0F00) >> 8,
                     self.0 & 0x00FF
                 );
@@ -245,9 +226,8 @@ impl fmt::Display for Instruction {
             0xD => {
                 let _res = writeln!(
                     f,
-                    "{:04X}          {} V{:X}, V{:X}, #${:X}",
+                    "{:04X}          SPRITE V{:X}, V{:X}, #${:X}",
                     self.0,
-                    "SPRITE",
                     (self.0 & 0x0F00) >> 8,
                     (self.0 & 0x00F0) >> 4,
                     self.0 & 0x000F
@@ -258,9 +238,8 @@ impl fmt::Display for Instruction {
                 0x9E => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          SKIP.KEY V{:X}",
                         self.0,
-                        "SKIP.KEY",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -268,9 +247,8 @@ impl fmt::Display for Instruction {
                 0xA1 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          SKIP.NOKEY V{:X}",
                         self.0,
-                        "SKIP.NOKEY",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -284,9 +262,8 @@ impl fmt::Display for Instruction {
                 0x07 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}, DELAY",
+                        "{:04X}          MOV V{:X}, DELAY",
                         self.0,
-                        "MOV",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -295,9 +272,8 @@ impl fmt::Display for Instruction {
                 0x0A => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          WAITKEY V{:X}",
                         self.0,
-                        "WAITKEY",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -305,9 +281,8 @@ impl fmt::Display for Instruction {
                 0x15 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} DELAY, V{:X}",
+                        "{:04X}          MOV DELAY, V{:X}",
                         self.0,
-                        "MOV",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -315,9 +290,8 @@ impl fmt::Display for Instruction {
                 0x18 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} SOUND, V{:X}",
+                        "{:04X}          MOV SOUND, V{:X}",
                         self.0,
-                        "MOV",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -325,9 +299,8 @@ impl fmt::Display for Instruction {
                 0x1E => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} I, V{:X}",
+                        "{:04X}          ADD I, V{:X}",
                         self.0,
-                        "ADD",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -335,9 +308,8 @@ impl fmt::Display for Instruction {
                 0x29 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          SPRITECHAR V{:X}",
                         self.0,
-                        "SPRITECHAR",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
@@ -346,19 +318,18 @@ impl fmt::Display for Instruction {
                 0x33 => {
                     let _res = writeln!(
                         f,
-                        "{:04X}          {} V{:X}",
+                        "{:04X}          MOVBCD V{:X}",
                         self.0,
-                        "MOVBCD",
                         (self.0 & 0x0F00) >> 8,
                     );
                 }
                 // stores V0 -> VX included in memory starting at adress I
                 0x55 => {
-                    let _res = writeln!(f, "{:04X}          {} (I), V0-VX", self.0, "MOVM",);
+                    let _res = writeln!(f, "{:04X}          MOVM (I), V0-VX", self.0);
                 }
                 // fills V0 -> VX with values read from memory starting with address I
                 0x65 => {
-                    let _res = writeln!(f, "{:04X}          {} V0-VX, (I)", self.0, "MOVM",);
+                    let _res = writeln!(f, "{:04X}          MOVM V0-VX, (I)", self.0);
                 }
                 _ => panic!(format!(
                     "unsupported instruction {:04X} within nimble: {:X}",

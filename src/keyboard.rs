@@ -47,6 +47,7 @@ impl Keyboard {
                 Keycode::X => Some(0x0),
                 Keycode::C => Some(0xb),
                 Keycode::V => Some(0xf),
+                Keycode::Escape => return Err(()),
                 _ => None,
             };
 

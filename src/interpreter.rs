@@ -2,6 +2,7 @@ use byteorder::{BigEndian, ByteOrder};
 use disassembler::Instruction;
 use rand::thread_rng;
 use rand::Rng;
+use std::default::Default;
 use CHIP8_HEIGHT;
 use CHIP8_RAM;
 use CHIP8_WIDTH;
@@ -51,8 +52,8 @@ pub struct State<'a> {
 
 pub struct Interpreter {
     vx: [u8; 16],
-    stack: [u16; 16],
-    i: u16,
+    stack: [usize; 16],
+    i: usize,
     pc: usize,
     dt: u8,
     sp: usize,
@@ -65,13 +66,18 @@ pub struct Interpreter {
     keyboard_register: usize,
 }
 
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Interpreter {
     pub fn new() -> Interpreter {
         let mut raw_memory = [0u8; CHIP8_RAM];
         Interpreter::init_fonts(&mut raw_memory);
         Interpreter {
             vx: [0u8; 16],
-            stack: [0u16; 16],
+            stack: [0usize; 16],
             i: 0,
             pc: 0x200,
             dt: 0,
@@ -117,7 +123,7 @@ impl Interpreter {
         self.vram_changed = false;
 
         if self.keyboard_waiting {
-            let pos = self.keyboard.iter().position(|&v| v == true).unwrap();
+            let pos = self.keyboard.iter().position(|&v| v).unwrap();
             self.vx[self.keyboard_register] = pos as u8;
         } else {
             if self.dt > 0 {
@@ -144,10 +150,10 @@ impl Interpreter {
 
     pub fn run(&mut self, instr: u16) {
         let nimbles = (
-            (instr >> 12) as u8,
-            ((instr >> 8) & 0xF) as u8,
-            ((instr >> 4) & 0xF) as u8,
-            (instr & 0xF) as u8,
+            (instr >> 12) as usize,
+            ((instr >> 8) & 0xF) as usize,
+            ((instr >> 4) & 0xF) as usize,
+            (instr & 0xF) as usize,
         );
         // print!("PC: {:X}, ", self.pc);
         // println!("instr: {}", Instruction(instr));
@@ -162,7 +168,7 @@ impl Interpreter {
             }
             (0, 0, 0xE, 0xE) => {
                 self.sp -= 1;
-                self.pc = self.stack[self.sp] as usize;
+                self.pc = self.stack[self.sp];
             }
             (0, 0, _, _l) => {
                 // NOP
@@ -172,200 +178,205 @@ impl Interpreter {
                 self.pc = (instr & 0xFFF) as usize;
             }
             (2, _, _, _) => {
-                self.stack[self.sp] = self.pc as u16 + INSTR_SIZE as u16;
+                self.stack[self.sp] = self.pc + INSTR_SIZE;
                 self.sp += 1;
                 self.pc = (instr & 0xFFF) as usize;
             }
             (3, r, _, _) => {
-                if self.vx[r as usize] == (instr & 0xFF) as u8 {
+                if self.vx[r] == instr as u8 {
                     self.pc += 2 * INSTR_SIZE;
                 } else {
                     self.pc += INSTR_SIZE;
                 }
             }
             (4, r, _, _) => {
-                if self.vx[r as usize] != (instr & 0xFF) as u8 {
+                if self.vx[r] != (instr & 0xFF) as u8 {
                     self.pc += 2 * INSTR_SIZE;
                 } else {
                     self.pc += INSTR_SIZE;
                 }
             }
             (5, r1, r2, 0) => {
-                if r1 == r2 {
+                if self.vx[r1] == self.vx[r2] {
                     self.pc += 2 * INSTR_SIZE;
                 } else {
                     self.pc += INSTR_SIZE;
                 }
             }
             (6, r, _, _) => {
-                self.vx[r as usize] = (instr & 0xFF) as u8;
+                self.vx[r] = (instr & 0xFF) as u8;
                 self.pc += INSTR_SIZE;
             }
             (7, r, _, _) => {
-                let vx = self.vx[r as usize] as u16;
+                let vx = u16::from(self.vx[r]);
                 let val = (instr & 0xFF) as u16;
                 let result = vx + val;
-                self.vx[r as usize] = result as u8;
+                self.vx[r] = result as u8;
                 self.pc += INSTR_SIZE;
             }
             (8, r1, r2, 0) => {
-                self.vx[r1 as usize] = self.vx[r2 as usize];
+                self.vx[r1] = self.vx[r2];
                 self.pc += INSTR_SIZE;
             }
             (8, r1, r2, 1) => {
-                self.vx[r1 as usize] |= self.vx[r2 as usize];
+                self.vx[r1] |= self.vx[r2];
                 self.pc += INSTR_SIZE;
             }
             (8, r1, r2, 2) => {
-                self.vx[r1 as usize] &= self.vx[r2 as usize];
+                self.vx[r1] &= self.vx[r2];
+                self.pc += INSTR_SIZE;
+            }
+            (8, r1, r2, 3) => {
+                self.vx[r1] ^= self.vx[r2];
                 self.pc += INSTR_SIZE;
             }
             (8, r1, r2, 4) => {
-                let rslt = (self.vx[r1 as usize] as u16).wrapping_add(self.vx[r2 as usize] as u16);
+                let rslt = u16::from(self.vx[r1]) + u16::from(self.vx[r2]);
                 if rslt > 0xFF {
                     self.vx[0xF] = 1;
                 } else {
                     self.vx[0xF] = 0;
                 }
 
-                self.vx[r1 as usize] = (rslt & 0xFF) as u8;
+                self.vx[r1] = rslt as u8;
                 self.pc += INSTR_SIZE;
             }
             (8, r1, r2, 5) => {
-                if self.vx[r1 as usize] > self.vx[r2 as usize] {
+                if self.vx[r1] > self.vx[r2] {
                     self.vx[0xF] = 1;
                 } else {
                     self.vx[0xF] = 0;
                 }
 
-                self.vx[r1 as usize].wrapping_sub(self.vx[r2 as usize]);
+                self.vx[r1] = self.vx[r1].wrapping_sub(self.vx[r2]);
                 self.pc += INSTR_SIZE;
             }
-            (8, r1, r2, 6) => {
-                self.vx[0xF] = self.vx[r2 as usize] & 0x1;
-                self.vx[r1 as usize] = self.vx[r2 as usize] >> 1;
+            (8, r1, _, 6) => {
+                self.vx[0xF] = self.vx[r1] & 0x1;
+                self.vx[r1] >>= 1;
                 self.pc += INSTR_SIZE;
             }
             (8, r1, r2, 7) => {
-                if self.vx[r2 as usize] > self.vx[r1 as usize] {
+                if self.vx[r2] > self.vx[r1] {
                     self.vx[0xF] = 1;
                 } else {
                     self.vx[0xF] = 0;
                 }
 
-                self.vx[r1 as usize] = self.vx[r2 as usize] - self.vx[r1 as usize];
+                self.vx[r1] = self.vx[r2].wrapping_sub(self.vx[r1]);
                 self.pc += INSTR_SIZE;
             }
-            (8, r1, r2, 0xE) => {
-                self.vx[0xF] = self.vx[r2 as usize] >> 7;
-                self.vx[r1 as usize] = self.vx[r2 as usize] << 1;
+            (8, r1, _, 0xE) => {
+                self.vx[0xF] = self.vx[r1] >> 7;
+                self.vx[r1] <<= 1;
                 self.pc += INSTR_SIZE;
             }
             (9, r1, r2, 0) => {
-                if r1 != r2 {
+                if self.vx[r1] != self.vx[r2] {
                     self.pc += 2 * INSTR_SIZE;
                 } else {
                     self.pc += INSTR_SIZE;
                 }
             }
             (0xA, _, _, _) => {
-                self.i = instr & 0xFFF;
+                self.i = (instr & 0xFFF) as usize;
                 self.pc += INSTR_SIZE;
             }
             (0xB, _, _, _) => {
-                self.pc = (self.vx[0] as u16 + instr & 0xFFF) as usize;
+                self.pc = self.vx[0] as usize + (instr & 0xFFF) as usize;
             }
             (0xC, r, _, _) => {
-                self.vx[r as usize] = thread_rng().gen::<u8>() & (instr & 0xFF) as u8;
+                self.vx[r] = thread_rng().gen::<u8>() & (instr as u8);
                 self.pc += INSTR_SIZE;
             }
             (0xD, r1, r2, n) => {
                 let sprites = (0..n)
                     .into_iter()
-                    .map(|idx| {
-                        Interpreter::byte_to_bits(self.memory[(self.i + idx as u16) as usize])
-                    })
+                    .map(|idx| Interpreter::byte_to_bits(self.memory[self.i + idx]))
                     .collect::<Vec<_>>();
 
                 self.vx[0xF] = 0;
-                for i in 0..sprites.len() {
-                    let y = ((self.vx[r2 as usize] as usize + i) % CHIP8_HEIGHT) as u8;
-                    for j in 0..sprites[i].len() {
-                        let x = ((self.vx[r1 as usize] as usize + j) % CHIP8_WIDTH) as u8;
-                        if self.vram[y as usize][x as usize] == 1 && sprites[i][j] == 1 {
+                for (i, row) in sprites.iter().enumerate() {
+                    let y = (self.vx[r2] as usize + i) % CHIP8_HEIGHT;
+                    for (j, &pixel) in row.iter().enumerate() {
+                        let x = (self.vx[r1] as usize + j) % CHIP8_WIDTH;
+                        if self.vram[y][x] == 1 && pixel == 1 {
+                            println!("collision");
                             self.vx[0xF] = 1;
-                            println!("vram[{}]: {:?}", y, self.vram[y as usize].to_vec());
-                            println!("vram[{}][{}]: {}", y, x, self.vram[y as usize][x as usize]);
-                            println!("sprites[i][j]: {}", sprites[i][j]);
-                            println!("collision!");
                         } else {
                             self.vx[0xF] = 0;
                         }
-                        self.vram[y as usize][x as usize] ^= sprites[i][j];
+                        self.vram[y][x] ^= pixel;
                     }
                 }
                 self.vram_changed = true;
                 self.pc += INSTR_SIZE;
             }
             (0xE, r, 9, 0xE) => {
-                if self.keyboard[self.vx[r as usize] as usize] {
+                if self.keyboard[self.vx[r] as usize] {
                     self.pc += 2 * INSTR_SIZE;
                 } else {
                     self.pc += INSTR_SIZE;
                 }
             }
             (0xE, r, 0xA, 0x1) => {
-                if self.keyboard[self.vx[r as usize] as usize] {
+                if !self.keyboard[self.vx[r] as usize] {
                     self.pc += 2 * INSTR_SIZE;
                 } else {
                     self.pc += INSTR_SIZE;
                 }
             }
             (0xF, r, 0, 7) => {
-                self.vx[r as usize] = self.dt;
+                self.vx[r] = self.dt;
                 self.pc += INSTR_SIZE;
             }
-            (0xF, r, 0, 0xA) => loop {
+            (0xF, r, 0, 0xA) => {
                 self.keyboard_waiting = true;
                 self.keyboard_register = r as usize;
                 self.pc += INSTR_SIZE;
-            },
+            }
             (0xF, r, 1, 5) => {
-                self.dt = self.vx[r as usize];
+                self.dt = self.vx[r];
                 self.pc += INSTR_SIZE;
             }
             (0xF, r, 1, 8) => {
-                self.st = self.vx[r as usize];
+                self.st = self.vx[r];
                 self.pc += INSTR_SIZE;
             }
             (0xF, r, 1, 0xE) => {
-                self.i += self.vx[r as usize] as u16;
+                let rslt = self.i + self.vx[r] as usize;
+                if rslt > 0xFFF {
+                    self.vx[0xF] = 1;
+                } else {
+                    self.vx[0xF] = 0;
+                }
+                self.i = rslt & 0xFFF;
                 self.pc += INSTR_SIZE;
             }
             (0xF, r, 2, 9) => {
                 // font sprites are located starting with address 0x0000, each
                 // sprite is 5 bytes long
-                self.i = self.vx[r as usize] as u16 * 5;
+                self.i = (self.vx[r] as usize) * 5;
                 self.pc += INSTR_SIZE;
             }
             (0xF, r, 3, 3) => {
-                let mut value = self.vx[r as usize];
-                self.memory[self.i as usize] = value / 100;
+                let mut value = self.vx[r];
+                self.memory[self.i] = value / 100;
                 value %= 100;
-                self.memory[(self.i + 1) as usize] = value / 10;
+                self.memory[self.i + 1] = value / 10;
                 value %= 10;
-                self.memory[(self.i + 2) as usize] = value;
+                self.memory[self.i + 2] = value;
                 self.pc += INSTR_SIZE;
             }
             (0xF, r, 5, 5) => {
                 for idx in 0..=r {
-                    self.memory[(self.i + idx as u16) as usize] = self.vx[idx as usize];
+                    self.memory[self.i + idx] = self.vx[idx];
                 }
                 self.pc += INSTR_SIZE;
             }
             (0xF, r, 6, 5) => {
                 for idx in 0..=r {
-                    self.vx[idx as usize] = self.memory[(self.i + idx as u16) as usize];
+                    self.vx[idx] = self.memory[self.i + idx];
                 }
                 self.pc += INSTR_SIZE;
             }

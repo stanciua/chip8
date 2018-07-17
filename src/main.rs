@@ -38,7 +38,7 @@ pub fn main() -> std::io::Result<()> {
     let mut keyboard = Keyboard::new(&sdl_context);
     let mut screen = Screen::new(&sdl_context);
     let audio = Audio::new(&sdl_context);
-    let mut interpreter = Interpreter::new();
+    let mut interpreter = Interpreter::default();
     interpreter.load(&program);
 
     while let Ok(keys) = keyboard.poll() {
