@@ -16,14 +16,10 @@ impl Audio {
         };
 
         let device = audio_system
-            .open_playback(None, &desired_spec, |spec| {
-                println!("{:?}", spec);
-
-                SquareWave {
-                    phase_inc: 240.0 / spec.freq as f32,
-                    phase: 0.0,
-                    volume: 0.5,
-                }
+            .open_playback(None, &desired_spec, |spec| SquareWave {
+                phase_inc: 240.0 / spec.freq as f32,
+                phase: 0.0,
+                volume: 0.5,
             })
             .unwrap();
 

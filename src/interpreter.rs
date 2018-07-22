@@ -1,5 +1,4 @@
 use byteorder::{BigEndian, ByteOrder};
-use disassembler::Instruction;
 use rand::thread_rng;
 use rand::Rng;
 use std::default::Default;
@@ -155,8 +154,6 @@ impl Interpreter {
             ((instr >> 4) & 0xF) as usize,
             (instr & 0xF) as usize,
         );
-        // print!("PC: {:X}, ", self.pc);
-        // println!("instr: {}", Instruction(instr));
         match nimbles {
             (0, 0, 0xE, 0) => {
                 self.vram
@@ -294,17 +291,13 @@ impl Interpreter {
                     .into_iter()
                     .map(|idx| Interpreter::byte_to_bits(self.memory[self.i + idx]))
                     .collect::<Vec<_>>();
-
                 self.vx[0xF] = 0;
                 for (i, row) in sprites.iter().enumerate() {
                     let y = (self.vx[r2] as usize + i) % CHIP8_HEIGHT;
                     for (j, &pixel) in row.iter().enumerate() {
                         let x = (self.vx[r1] as usize + j) % CHIP8_WIDTH;
                         if self.vram[y][x] == 1 && pixel == 1 {
-                            println!("collision");
                             self.vx[0xF] = 1;
-                        } else {
-                            self.vx[0xF] = 0;
                         }
                         self.vram[y][x] ^= pixel;
                     }
